@@ -1,25 +1,60 @@
 {
   "expo": {
-    "name": "car-calculator-scaffold",
-    "slug": "car-calculator-scaffold",
+    "name": "Car Calculator",
+    "owner": "dylanpatel401",
+    "slug": "car-calculator",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "description": "A private, transparent car affordability and ownership calculator.",
+    "orientation": "default",
+    "icon": "./assets/car-calculator-icon.png",
+    "scheme": "carcalculator",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F4F6F5",
     "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dylanpatel.carcalculator",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "predictiveBackGestureEnabled": false
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyCollectedDataTypes": [],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ]
+      }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/car-calculator-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F4F6F5",
+          "dark": {
+            "backgroundColor": "#111614"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "51bed36c-3b06-4238-88e6-5345c6532aa9"
+      }
     }
   }
 }
