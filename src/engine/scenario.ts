@@ -1,3 +1,4 @@
+import { scenarioIssues } from '@/engine/validation';
 import { calculateLoan } from '@/engine/financing';
 import { monthlyIncome, essentialExpenses } from '@/engine/cashflow';
 import { projectDebtPayoff } from '@/engine/debt';
@@ -6,6 +7,18 @@ import { maintenanceCost } from '@/engine/maintenance';
 import { AppScenario, ScenarioResult } from '@/types/domain';
 
 export function calculateScenario(scenario: AppScenario): ScenarioResult {
+  const issues = scenarioIssues(scenario);
+  if (issues.some(i => i.code === 'invalid' || i.field === 'vehicle.price')) {
+    return { complete: false, status: 'incomplete', issues, warnings: issues.map(i => i.message),
+      vehicleName: [scenario.vehicle.year, scenario.vehicle.make, scenario.vehicle.model].join(' '),
+      monthlyIncome: null, essentialExpenses: null, minimumDebtPayments: null, maintenanceMonthly: null,
+      maintenanceIsEstimate: scenario.vehicle.maintenanceMonthly === null, fuelMonthly: null, trueMonthlyCost: null,
+      monthlySurplus: null, cashRemaining: null, emergencyCashRemaining: null, emergencyRunwayMonths: null,
+      transportationIncomePercent: null, reserveGap: null, downPaymentApplied: null, downPaymentShortfall: null,
+      loan: { taxes: null, amountFinanced: null, monthlyPayment: null, totalInterest: null, totalFinancedCost: null, schedule: [] },
+      debtWithoutCar: { months: null, totalInterest: 0, isPayable: false, payoffOrder: [] },
+      debtWithCar: { months: null, totalInterest: 0, isPayable: false, payoffOrder: [] }, debtDelayMonths: null };
+  }
   const income = monthlyIncome(scenario.profile);
   const expenses = essentialExpenses(scenario.profile);
   const minimumDebtPayments = scenario.debts.reduce((sum, debt) => sum + Math.max(0, debt.minimumPayment), 0);
@@ -37,7 +50,7 @@ export function calculateScenario(scenario: AppScenario): ScenarioResult {
   const emergencyCashRemaining = emergencySavings - emergencyUsed;
   const spendableCashRemaining = Math.max(0, spendableSavings - downPaymentApplied);
   const cashRemaining = emergencyCashRemaining + spendableCashRemaining;
-  const monthlySurplus = trueMonthlyCost === null ? null : income - expenses - minimumDebtPayments
+  const monthlySurplus = trueMonthlyCost === null || issues.some(i => i.field.startsWith('profile.') || i.field.startsWith('debts.')) ? null : income - expenses - minimumDebtPayments
     - trueMonthlyCost - Math.max(0, scenario.profile.discretionarySpending);
   const emergencyRunwayMonths = expenses > 0 ? emergencyCashRemaining / expenses : null;
   const transportationIncomePercent = trueMonthlyCost !== null && income > 0 ? trueMonthlyCost / income * 100 : null;
@@ -50,17 +63,15 @@ export function calculateScenario(scenario: AppScenario): ScenarioResult {
     ? Math.max(0, debtWithCar.months - debtWithoutCar.months)
     : null;
 
-  const warnings: string[] = [];
-  if (!scenario.vehicle.make.trim() || !scenario.vehicle.model.trim()) warnings.push('Add the vehicle make and model.');
-  if (scenario.vehicle.price <= 0) warnings.push('Enter a vehicle price.');
-  if (fuelMonthly === null) warnings.push('Enter MPG above zero to calculate fuel cost.');
-  if (downPaymentShortfall > 0) warnings.push('Part of the requested down payment cannot be applied. Calculations use the funded purchase amount.');
-  if (monthlySurplus !== null && monthlySurplus < 0) warnings.push('This scenario creates a monthly cash-flow shortfall.');
-  if (reserveGap < 0) warnings.push('Emergency savings fall below your reserve target.');
-  if (!debtWithCar.isPayable) warnings.push('At least one debt does not amortize under these assumptions.');
+  if (downPaymentShortfall > 0) issues.push({ code: 'funding', field: 'loan.downPayment', message: 'Part of the requested down payment cannot be applied. Calculations use available purchase funds.' });
+  if (monthlySurplus !== null && monthlySurplus < 0) issues.push({ code: 'cashflow', field: 'profile', message: 'This scenario creates a monthly cash-flow shortfall.' });
+  if (reserveGap < 0) issues.push({ code: 'reserve', field: 'profile.reserveTarget', message: 'Emergency savings fall below your reserve target.' });
+  if (!debtWithCar.isPayable) issues.push({ code: 'debt', field: 'debts', message: 'At least one debt does not amortize under these assumptions.' });
+  const complete = !issues.some(i => i.code === 'missing' || i.code === 'invalid');
 
   return {
-    complete: warnings.every((warning) => !warning.startsWith('Add') && !warning.startsWith('Enter')),
+    complete, issues,
+    status: !complete ? 'incomplete' : monthlySurplus !== null && monthlySurplus < 0 ? 'shortfall' : reserveGap < 0 ? 'reserveBelowTarget' : 'withinTarget',
     vehicleName: [scenario.vehicle.year, scenario.vehicle.make, scenario.vehicle.model].filter(Boolean).join(' '),
     monthlyIncome: income,
     essentialExpenses: expenses,
@@ -80,7 +91,7 @@ export function calculateScenario(scenario: AppScenario): ScenarioResult {
     loan,
     debtWithoutCar,
     debtWithCar,
-    debtDelayMonths,
-    warnings,
+    debtDelayMonths: monthlySurplus === null ? null : debtDelayMonths,
+    warnings: issues.map(i => i.message),
   };
 }

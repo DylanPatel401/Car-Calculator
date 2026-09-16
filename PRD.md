@@ -1,5 +1,19 @@
 # Car Calculator PRD
 
+## Premium experience overhaul
+
+The current experience extends Phase 2 with:
+
+- An iPhone-first overview, expandable editors, persistent monthly summary, cost breakdown and reserve visualization; adaptive tablet columns and light/dark system themes.
+- A first-run choice between real setup and an isolated in-memory demo. Sample edits are never written to the real workspace.
+- Four validated setup stages: income; savings/spending with optional debts; vehicle/financing; review. Personal inputs begin blank, explicit zero is accepted, and unfinished setup resumes from a separate versioned draft key.
+- Temporary what-if price, down-payment, APR and term experiments. Reset/discard leave the source untouched; saving creates an independent named option with the existing shared profile.
+- Selectable timing outcomes and payment bars; comparison selection and key differences ahead of the detailed baseline table.
+- Structured calculation issues and explicit incomplete/cash-flow/reserve/within-target statuses. Invalid loan inputs throw at the loan boundary; aggregate results suppress unavailable values.
+- Numeric edit buffers that retain decimal typing and invalid drafts without publishing invalid values. Serialized workspace writes expose retryable failures. Setup clears its draft only after a successful workspace write.
+
+The workspace schema remains version 2 and existing migrations are retained. No accounts, sync, leases, external vehicle APIs, exports or deployment are added.
+
 ## Phase 2: Saved Options and Comparison
 
 Phase 2 extends the Phase 1 requirements below with a locally saved shortlist. One shared financial profile, debt list, annual driving distance, and fuel price apply to every option. Vehicle costs, financing, and timing settings belong to individual named options.

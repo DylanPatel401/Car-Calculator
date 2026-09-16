@@ -80,3 +80,12 @@ export function migrateScenario(raw: unknown): AppScenario {
     debts: Array.isArray(candidate.debts) ? candidate.debts : [],
   };
 }
+
+/** Blank finances for a fresh workspace; sample assumptions remain confined to the demo. */
+export function createEmptyScenario(): AppScenario {
+  const s = createDefaultScenario();
+  s.profile = { ...s.profile, paycheckAmount: 0, emergencySavings: 0, carSavings: 0, otherSavings: 0, reserveTarget: 0,
+    essentialExpensesQuick: 0, discretionarySpending: 0, monthlyCarSavingsContribution: 0,
+    detailedExpenses: { housing: 0, groceries: 0, utilities: 0, phone: 0, transportation: 0, insurance: 0, subscriptions: 0, otherRequired: 0 } };
+  return s;
+}

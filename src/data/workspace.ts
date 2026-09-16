@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { createDefaultScenario, migrateScenario } from '@/data/defaults';
+import { createDefaultScenario, createEmptyScenario, migrateScenario } from '@/data/defaults';
 import { AppScenario, SavedOption, Workspace } from '@/types/domain';
 
 const amount = z.number().finite().nonnegative();
-const profileSchema = z.object({
+export const profileSchema = z.object({
   paycheckAmount: amount, payFrequency: z.enum(['weekly', 'biweekly', 'twiceMonthly', 'monthly']),
   sideIncomeMonthly: amount, includeSideIncome: z.boolean(), emergencySavings: amount,
   carSavings: amount, otherSavings: amount, reserveTarget: amount,
@@ -13,7 +13,7 @@ const profileSchema = z.object({
   discretionarySpending: amount, monthlyCarSavingsContribution: amount,
   useEmergencyForDownPayment: z.boolean(), debtAvalancheEnabled: z.boolean(),
 });
-const debtSchema = z.object({ id: z.string(), name: z.string(),
+export const debtSchema = z.object({ id: z.string(), name: z.string(),
   type: z.enum(['studentLoan', 'creditCard', 'personalLoan', 'autoLoan', 'other']),
   balance: amount, apr: amount.max(100), minimumPayment: amount });
 const optionSchema = z.object({
@@ -36,7 +36,7 @@ export function createOption(scenario = createDefaultScenario(), name?: string):
     vehicle, loan: { ...scenario.loan }, timing: { ...scenario.timing }, createdAt: now, updatedAt: now };
 }
 
-export function workspaceFromScenario(scenario = createDefaultScenario()): Workspace {
+export function workspaceFromScenario(scenario = createEmptyScenario()): Workspace {
   const option = createOption(scenario);
   return { version: 2, onboardingComplete: scenario.onboardingComplete, profile: { ...scenario.profile },
     debts: scenario.debts.map((debt) => ({ ...debt })),

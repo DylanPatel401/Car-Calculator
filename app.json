@@ -9,7 +9,7 @@
     "icon": "./assets/car-calculator-icon.png",
     "scheme": "carcalculator",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F4F6F5",
+    "backgroundColor": "#F6F5F0",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dylanpatel.carcalculator",
@@ -40,9 +40,9 @@
           "image": "./assets/car-calculator-icon.png",
           "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#F4F6F5",
+          "backgroundColor": "#F6F5F0",
           "dark": {
-            "backgroundColor": "#111614"
+            "backgroundColor": "#111A17"
           }
         }
       ]

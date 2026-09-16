@@ -26,7 +26,7 @@ export function calculateTimingScenario(scenario: AppScenario, monthsWaiting: nu
   const nowResult = calculateScenario(scenario);
   const result = calculateScenario(adjusted);
   const nowCost = nowResult.loan.totalInterest;
-  const futureCost = result.loan.totalInterest + waitingCost;
+  const futureCost = result.loan.totalInterest === null ? null : result.loan.totalInterest + waitingCost;
   return {
     label,
     monthsWaiting: months,
@@ -34,6 +34,6 @@ export function calculateTimingScenario(scenario: AppScenario, monthsWaiting: nu
     additionalSavings,
     waitingCost,
     result,
-    netDifferenceFromNow: nowCost - futureCost,
+    netDifferenceFromNow: nowCost === null || futureCost === null ? null : nowCost - futureCost,
   };
 }

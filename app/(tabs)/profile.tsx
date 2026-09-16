@@ -27,16 +27,16 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={styles.page}>
       <View style={styles.shell}>
-        <ScreenHeader eyebrow="Local profile" title="Your financial picture" subtitle="These inputs shape affordability. They are stored only on this device and are not financial advice." />
+        <ScreenHeader eyebrow="Local profile" title="Your financial picture" subtitle="One financial profile, shared by every saved option. Your numbers stay on this device." />
         <View style={wide ? styles.wideGrid : styles.stack}>
           <View style={styles.column}>
-            <Section title="Income">
+            <Section collapsible title="Income">
               <NumberField label="Paycheck amount" value={scenario.profile.paycheckAmount} onChange={(paycheckAmount) => updateProfile({ paycheckAmount: paycheckAmount ?? 0 })} />
               <Segmented<PayFrequency> label="Pay frequency" hint={payFrequencyHint[scenario.profile.payFrequency]} value={scenario.profile.payFrequency} onChange={(payFrequency) => updateProfile({ payFrequency })} options={[{ label: 'Weekly', value: 'weekly' }, { label: 'Every 2 weeks', value: 'biweekly' }, { label: 'Twice monthly', value: 'twiceMonthly' }, { label: 'Monthly', value: 'monthly' }]} />
               <NumberField label="Side income monthly" value={scenario.profile.sideIncomeMonthly} onChange={(sideIncomeMonthly) => updateProfile({ sideIncomeMonthly: sideIncomeMonthly ?? 0 })} />
               <ToggleRow label="Include side income" caption="Turn this off to test the plan using base income only." value={scenario.profile.includeSideIncome} onChange={(includeSideIncome) => updateProfile({ includeSideIncome })} />
             </Section>
-            <Section title="Savings & reserve">
+            <Section collapsible title="Savings & reserve">
               <NumberField label="Emergency savings" value={scenario.profile.emergencySavings} onChange={(emergencySavings) => updateProfile({ emergencySavings: emergencySavings ?? 0 })} />
               <NumberField label="Car savings" value={scenario.profile.carSavings} onChange={(carSavings) => updateProfile({ carSavings: carSavings ?? 0 })} />
               <NumberField label="Other savings" value={scenario.profile.otherSavings} onChange={(otherSavings) => updateProfile({ otherSavings: otherSavings ?? 0 })} />
@@ -45,20 +45,19 @@ export default function ProfileScreen() {
             </Section>
           </View>
           <View style={styles.column}>
-            <Section title="Monthly spending">
+            <Section collapsible title="Monthly spending">
               <Segmented<ExpenseMode> label="Expense detail" value={scenario.profile.expenseMode} onChange={(expenseMode) => updateProfile({ expenseMode })} options={[{ label: 'Quick total', value: 'quick' }, { label: 'Detailed', value: 'detailed' }]} />
               {scenario.profile.expenseMode === 'quick' ? <NumberField label="Required expenses" value={scenario.profile.essentialExpensesQuick} onChange={(essentialExpensesQuick) => updateProfile({ essentialExpensesQuick: essentialExpensesQuick ?? 0 })} /> : Object.entries(scenario.profile.detailedExpenses).map(([key, value]) => <NumberField key={key} label={expenseLabels[key] ?? key} value={value} onChange={(next) => updateProfile({ detailedExpenses: { ...scenario.profile.detailedExpenses, [key]: next ?? 0 } })} />)}
               <NumberField label="Discretionary spending" value={scenario.profile.discretionarySpending} onChange={(discretionarySpending) => updateProfile({ discretionarySpending: discretionarySpending ?? 0 })} />
             </Section>
-            <Section title="Debt payoff model" caption="Extra available cash is applied to the highest APR first. This is a transparent estimate, not advice.">
-              <ToggleRow label="Model extra debt payments" value={scenario.profile.debtAvalancheEnabled} onChange={(debtAvalancheEnabled) => updateProfile({ debtAvalancheEnabled })} />
+            <Section collapsible title="Debts" caption="Shared balances and minimum payments for all your options.">
               {scenario.debts.map((debt) => (
                 <View key={debt.id} style={[styles.debt, { borderColor: colors.border }]}>
                   <Field label="Debt name" value={debt.name} onChangeText={(name) => updateDebt(debt.id, { name })} />
                   <Segmented<DebtType> label="Type" value={debt.type} onChange={(type) => updateDebt(debt.id, { type })} options={[{ label: 'Card', value: 'creditCard' }, { label: 'Student', value: 'studentLoan' }, { label: 'Personal', value: 'personalLoan' }, { label: 'Other', value: 'other' }]} />
                   <View style={styles.row}>
                     <NumberField label="Balance" value={debt.balance} onChange={(balance) => updateDebt(debt.id, { balance: balance ?? 0 })} />
-                    <NumberField label="APR (%)" value={debt.apr} onChange={(apr) => updateDebt(debt.id, { apr: apr ?? 0 })} hint="Enter 18.9 for 18.9%" />
+                    <NumberField max={100} label="APR (%)" value={debt.apr} onChange={(apr) => updateDebt(debt.id, { apr: apr ?? 0 })} hint="Enter 18.9 for 18.9%" />
                     <NumberField label="Minimum" value={debt.minimumPayment} onChange={(minimumPayment) => updateDebt(debt.id, { minimumPayment: minimumPayment ?? 0 })} />
                   </View>
                   <Button variant="danger" icon="trash" label="Remove debt" onPress={() => removeDebt(debt.id)} />
@@ -68,17 +67,17 @@ export default function ProfileScreen() {
             </Section>
           </View>
         </View>
-        <Section title="Privacy & data">
+        <Section title="Assumptions & privacy"><ToggleRow label="Model extra debt payments" caption="Apply positive surplus to the highest APR first. This is an editable modeling assumption." value={scenario.profile.debtAvalancheEnabled} onChange={(debtAvalancheEnabled) => updateProfile({ debtAvalancheEnabled })} /><Text style={[styles.body, { color: colors.textMuted }]}>Ownership estimates are editable. Timing holds the vehicle price and APR constant. Results describe your assumptions, not a lender quote or recommendation.</Text>
           <Text style={[styles.body, { color: colors.textMuted }]}>Your financial profile and saved options are stored locally using unencrypted device storage.</Text>
-          <Button variant="danger" icon="arrow.counterclockwise" label="Reset all local data" onPress={() => setResetOpen(true)} />
+          {!useScenarioStore.getState().demoOriginal && <Button variant="danger" icon="arrow.counterclockwise" label="Reset all local data" onPress={() => setResetOpen(true)} />}
         </Section>
       </View>
-      <Modal visible={resetOpen} transparent animationType="fade" onRequestClose={() => setResetOpen(false)}>
+      <Modal visible={resetOpen} transparent animationType="none" onRequestClose={() => setResetOpen(false)}>
         <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#00000080' }}>
           <View accessibilityViewIsModal style={{ width: '100%', maxWidth: 480, alignSelf: 'center', padding: 20, borderRadius: 8, backgroundColor: colors.surface, gap: 16 }}>
             <Text accessibilityRole="header" style={{ color: colors.text, fontSize: 20, fontWeight: '700' }}>Reset all data?</Text>
             <Text style={{ color: colors.textMuted }}>This removes your financial profile and every saved option, then returns to setup.</Text>
-            <Button label="Reset everything" variant="danger" onPress={() => { void reset().then(() => { setResetOpen(false); router.replace('/onboarding'); }); }} />
+            <Button label="Reset everything" variant="danger" onPress={() => { void reset().then(() => { setResetOpen(false); router.replace('/welcome'); }); }} />
             <Button label="Cancel" variant="secondary" onPress={() => setResetOpen(false)} />
           </View>
         </View>

@@ -7,6 +7,9 @@ export function annualPercentToMonthlyRate(annualPercent: number): number {
 }
 
 export function calculateLoan(vehiclePrice: number, terms: LoanTerms): LoanResult {
+  if (!Number.isFinite(vehiclePrice) || vehiclePrice < 0 || Object.values(terms).some((v) => !Number.isFinite(v) || v < 0) || !Number.isInteger(terms.termMonths) || terms.termMonths < 1 || terms.termMonths > 120 || terms.apr > 100 || terms.taxRate > 100) {
+    throw new RangeError('Enter valid vehicle price and loan terms.');
+  }
   const price = Math.max(0, finite(vehiclePrice));
   const taxes = price * Math.max(0, finite(terms.taxRate)) / 100;
   const amountFinanced = Math.max(
@@ -20,7 +23,7 @@ export function calculateLoan(vehiclePrice: number, terms: LoanTerms): LoanResul
     ? 0
     : monthlyRate === 0
       ? amountFinanced / termMonths
-      : amountFinanced * monthlyRate / (1 - (1 + monthlyRate) ** -termMonths);
+      : amountFinanced * monthlyRate / (-Math.expm1(-termMonths * Math.log1p(monthlyRate)));
 
   const schedule: AmortizationRow[] = [];
   let balance = amountFinanced;

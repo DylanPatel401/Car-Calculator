@@ -1,11 +1,18 @@
+import { writeWorkspace } from '@/store/persistence';
+import { clearSetup } from '@/data/setup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { createOption, migrateWorkspace, repairSelection, scenarioForOption, validOption, workspaceFromScenario } from '@/data/workspace';
+import { createDefaultScenario } from '@/data/defaults';
+import { profileSchema, debtSchema, createOption, migrateWorkspace, repairSelection, scenarioForOption, validOption, workspaceFromScenario } from '@/data/workspace';
 import { AppScenario, Debt, FinancialProfile, LoanTerms, SavedOption, TimingSettings, Vehicle, Workspace } from '@/types/domain';
 
 export const STORAGE_KEY = 'car-calculator-scenario';
 interface ScenarioState {
+  demoOriginal: Workspace | null;
+  startDemo: () => void;
+  exitDemo: () => void;
+  saveExperiment: (scenario: AppScenario, name: string) => void;
   workspace: Workspace;
   scenario: AppScenario;
   hasHydrated: boolean;
@@ -39,10 +46,23 @@ export const useScenarioStore = create<ScenarioState>()(persist((set) => {
       return validOption(next) ? next : option;
     }) }));
   return {
-    ...derived(initial), hasHydrated: false,
+    ...derived(initial), hasHydrated: false, demoOriginal: null,
+    startDemo: () => set(state => {
+      if (state.demoOriginal) return state;
+      const sample = createDefaultScenario();
+      sample.onboardingComplete = true;
+      sample.vehicle.make = 'Toyota'; sample.vehicle.model = 'Camry';
+      return { ...derived(workspaceFromScenario(sample)), demoOriginal: state.workspace };
+    }),
+    exitDemo: () => set(state => state.demoOriginal ? { ...derived(state.demoOriginal), demoOriginal: null } : state),
+    saveExperiment: (scenario, name) => change(w => {
+      const option = createOption(scenario, name.trim() || 'What-if option');
+      if (!validOption(option)) return w;
+      return { ...w, options: [...w.options, option], activeOptionId: option.id };
+    }),
     setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     completeOnboarding: (scenario) => set(derived(workspaceFromScenario({ ...scenario, onboardingComplete: true }))),
-    updateProfile: (changes) => change((w) => ({ ...w, profile: { ...w.profile, ...changes } })),
+    updateProfile: (changes) => change((w) => { const profile = { ...w.profile, ...changes }; return profileSchema.safeParse(profile).success ? { ...w, profile } : w; }),
     updateVehicle: ({ annualMiles, fuelPrice, ...changes }) => {
       editActive((option) => ({ ...option, vehicle: { ...option.vehicle, ...changes } }));
       if (annualMiles !== undefined || fuelPrice !== undefined) change((w) => ({ ...w, driving: {
@@ -53,7 +73,7 @@ export const useScenarioStore = create<ScenarioState>()(persist((set) => {
     updateLoan: (changes) => editActive((option) => ({ ...option, loan: { ...option.loan, ...changes } })),
     updateTiming: (changes) => editActive((option) => ({ ...option, timing: { ...option.timing, ...changes } })),
     addDebt: () => change((w) => ({ ...w, debts: [...w.debts, { id: `debt-${Date.now()}-${Math.random()}`, name: 'New debt', type: 'creditCard', balance: 0, apr: 0, minimumPayment: 0 }] })),
-    updateDebt: (id, changes) => change((w) => ({ ...w, debts: w.debts.map((debt) => debt.id === id ? { ...debt, ...changes } : debt) })),
+    updateDebt: (id, changes) => change((w) => ({ ...w, debts: w.debts.map((debt) => debt.id === id && debtSchema.safeParse({ ...debt, ...changes }).success ? { ...debt, ...changes } : debt) })),
     removeDebt: (id) => change((w) => ({ ...w, debts: w.debts.filter((debt) => debt.id !== id) })),
     addOption: () => change((w) => {
       const option = createOption(undefined, `Option ${w.options.length + 1}`);
@@ -83,7 +103,7 @@ export const useScenarioStore = create<ScenarioState>()(persist((set) => {
       return repairSelection({ ...w, comparisonIds });
     }),
     setBaseline: (id) => change((w) => w.comparisonIds.includes(id) ? { ...w, baselineId: id } : w),
-    reset: async () => { set({ ...derived(workspaceFromScenario()), hasHydrated: true }); },
+    reset: async () => { await clearSetup(); set({ ...derived(workspaceFromScenario()), hasHydrated: true }); },
   };
 }, {
   name: STORAGE_KEY, version: 2,
@@ -95,10 +115,10 @@ export const useScenarioStore = create<ScenarioState>()(persist((set) => {
         return value;
       } catch { return null; }
     },
-    setItem: (name, value) => AsyncStorage.setItem(name, value),
+    setItem: writeWorkspace,
     removeItem: (name) => AsyncStorage.removeItem(name),
   })),
-  partialize: (state) => ({ workspace: state.workspace }),
+  partialize: (state) => ({ workspace: state.demoOriginal ?? state.workspace }),
   migrate: (persisted) => {
     const stored = persisted as { workspace?: unknown; scenario?: unknown } | null;
     return { workspace: migrateWorkspace(stored?.workspace ?? stored?.scenario) };

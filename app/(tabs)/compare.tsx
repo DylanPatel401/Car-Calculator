@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { AppIcon, Button, Field, ScreenHeader } from '@/components/ui';
+import { ResultStatus } from '@/components/insights';
+import { AppIcon, Button, Field, ScreenHeader, Section } from '@/components/ui';
 import { scenarioForOption } from '@/data/workspace';
 import { calculateScenario } from '@/engine/scenario';
 import { compareOptions, comparisonRows } from '@/engine/comparison';
@@ -27,30 +28,24 @@ export default function CompareScreen() {
     <View style={styles.shell}>
       <ScreenHeader eyebrow="Your shortlist" title="Compare options" subtitle={`${workspace.options.length} saved | ${workspace.comparisonIds.length} of 3 selected`} />
       <Button label="New option" icon="plus" onPress={() => { store.addOption(); router.push('/(tabs)'); }} />
-      <View style={styles.list}>
-        {summaries.map(({ option, result }) => {
+      <Section title="Choose up to three" caption="Select the options you want to see side by side.">
+        {workspace.options.map(option => {
           const checked = workspace.comparisonIds.includes(option.id);
           const disabled = !checked && workspace.comparisonIds.length >= 3;
-          return <View key={option.id} style={[styles.item, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            <View style={styles.titleRow}>
-              <Pressable accessibilityRole="checkbox" accessibilityLabel={`Compare ${option.name}`} accessibilityState={{ checked, disabled }} disabled={disabled}
-                onPress={() => store.toggleComparison(option.id)} style={[styles.icon, { opacity: disabled ? 0.4 : 1 }]}>
-                <Text style={{ color: checked ? colors.primary : colors.text, fontSize: 24 }}>{checked ? '\u2611' : '\u2610'}</Text>
-              </Pressable>
-              <View style={{ flex: 1 }}><Text style={[styles.name, { color: colors.text }]}>{option.name}</Text>
-                <Text style={{ color: colors.textMuted }}>{[option.vehicle.year, option.vehicle.make, option.vehicle.model].filter(Boolean).join(' ')}</Text></View>
-            </View>
-            <Text style={{ color: colors.text }}>{result.complete ? `${formatCurrency(result.trueMonthlyCost)} / month | ${formatCurrency(result.monthlySurplus)} surplus` : 'Incomplete vehicle inputs'}</Text>
-            {result.warnings.map((warning) => <Text key={warning} style={{ color: colors.warning }}>{warning}</Text>)}
-            <View style={styles.actions}>
-              <Button label="Edit" variant="secondary" onPress={() => edit(option.id)} />
-              <IconAction label={`Duplicate ${option.name}`} name="doc.on.doc" onPress={() => { store.duplicateOption(option.id); router.push('/(tabs)'); }} />
-              <IconAction label={`Rename ${option.name}`} name="pencil" onPress={() => { setName(option.name); setDialog({ id: option.id, mode: 'rename' }); }} />
-              <IconAction label={`Delete ${option.name}`} name="trash" onPress={() => setDialog({ id: option.id, mode: 'delete' })} />
-            </View>
-          </View>;
+          return <Pressable key={option.id} accessibilityRole="checkbox" accessibilityLabel={`Compare ${option.name}`} accessibilityState={{ checked, disabled }} disabled={disabled} onPress={() => store.toggleComparison(option.id)} style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: disabled ? 0.45 : 1 }}>
+            <Text style={{ color: checked ? colors.primary : colors.text, fontSize: 22 }}>{checked ? '\u2611' : '\u2610'}</Text>
+            <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{option.name}</Text>
+          </Pressable>;
         })}
-      </View>
+      </Section>
+      {entries.length >= 2 && <Section title="The differences that matter" caption="Relative to your selected baseline. There is no single winner; each option has trade-offs.">
+        {entries.map(entry => <View key={entry.option.id} style={{ paddingVertical: 12, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+          <Text style={[styles.name, { color: colors.text }]}>{entry.option.name}{entry.option.id === workspace.baselineId ? ' / baseline' : ''}</Text>
+          <ResultStatus result={entry.result} />
+          <Text style={{ color: colors.text, fontSize: 22, fontWeight: '700' }}>{formatCurrency(entry.result.complete ? entry.result.trueMonthlyCost : null)} / month</Text>
+          {entry.option.id !== workspace.baselineId && [6, 7, 11].map(index => <Text key={index} style={{ color: colors.textMuted }}>{comparisonRows[index]!.label}: {entry.differences[index] == null ? 'Incomplete' : `${entry.differences[index]! > 0 ? '+' : entry.differences[index]! < 0 ? '-' : ''}${formatCurrency(Math.abs(entry.differences[index]!))} vs baseline`}</Text>)}
+        </View>)}
+      </Section>}
       {entries.length < 2 ? <Text style={{ color: colors.textMuted }}>Select at least two options to compare.</Text> : <View>
         <Text accessibilityRole="header" style={[styles.name, { color: colors.text, marginBottom: 16 }]}>Current purchase comparison</Text>
         <View style={{ flexDirection: 'row' }}>
@@ -79,8 +74,28 @@ export default function CompareScreen() {
           </ScrollView>
         </View>
       </View>}
+      <Text accessibilityRole="header" style={[styles.name, { color: colors.text }]}>Manage your shortlist</Text>
+      <View style={styles.list}>
+        {summaries.map(({ option, result }) => {
+          return <View key={option.id} style={[styles.item, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+            <View style={styles.titleRow}>
+              <View style={{ flex: 1 }}><Text style={[styles.name, { color: colors.text }]}>{option.name}</Text>
+                <Text style={{ color: colors.textMuted }}>{[option.vehicle.year, option.vehicle.make, option.vehicle.model].filter(Boolean).join(' ')}</Text></View>
+            </View>
+            <Text style={{ color: colors.text }}>{result.complete ? `${formatCurrency(result.trueMonthlyCost)} / month | ${formatCurrency(result.monthlySurplus)} surplus` : 'Incomplete inputs'}</Text>
+            {result.warnings.map((warning) => <Text key={warning} style={{ color: colors.warning }}>{warning}</Text>)}
+            <View style={styles.actions}>
+              <Button label="Edit" variant="secondary" onPress={() => edit(option.id)} />
+              <IconAction label={`Duplicate ${option.name}`} name="doc.on.doc" onPress={() => { store.duplicateOption(option.id); router.push('/(tabs)'); }} />
+              <IconAction label={`Rename ${option.name}`} name="pencil" onPress={() => { setName(option.name); setDialog({ id: option.id, mode: 'rename' }); }} />
+              <IconAction label={`Delete ${option.name}`} name="trash" onPress={() => setDialog({ id: option.id, mode: 'delete' })} />
+            </View>
+          </View>;
+        })}
+      </View>
+
     </View>
-    <Modal visible={dialog !== null} transparent animationType="fade" onRequestClose={() => setDialog(null)}>
+    <Modal visible={dialog !== null} transparent animationType="none" onRequestClose={() => setDialog(null)}>
       <View style={styles.overlay}><View accessibilityViewIsModal style={[styles.dialog, { backgroundColor: colors.surface }]}>
         <Text accessibilityRole="header" style={[styles.name, { color: colors.text }]}>{dialog?.mode === 'rename' ? 'Rename option' : `Delete ${selectedOption?.name}?`}</Text>
         {dialog?.mode === 'rename' ? <Field label="Option name" accessibilityLabel="Option name" value={name} onChangeText={setName} maxLength={120} autoFocus />
@@ -101,8 +116,8 @@ function IconAction({ label, name, onPress }: { label: string; name: 'pencil' | 
 }
 const styles = StyleSheet.create({
   page: { padding: 16, paddingTop: 22, paddingBottom: 40 }, shell: { width: '100%', maxWidth: 1120, alignSelf: 'center', gap: 16 },
-  list: { gap: 12 }, item: { borderWidth: 1, borderRadius: 8, padding: 14, gap: 10 }, titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  list: { gap: 12 }, item: { borderWidth: 1, borderRadius: 20, padding: 20, gap: 12 }, titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { fontSize: 18, fontWeight: '700' }, actions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' }, icon: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   cell: { padding: 10, justifyContent: 'center', borderBottomWidth: 1, gap: 6 }, overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#00000080' },
-  dialog: { maxWidth: 480, width: '100%', alignSelf: 'center', borderRadius: 8, padding: 20, gap: 16 },
+  dialog: { maxWidth: 480, width: '100%', alignSelf: 'center', borderRadius: 20, padding: 20, gap: 16 },
 });

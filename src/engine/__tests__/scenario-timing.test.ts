@@ -9,8 +9,8 @@ describe('scenario engine', () => {
     scenario.vehicle.model = 'Camry';
     const result = calculateScenario(scenario);
     expect(result.complete).toBe(true);
-    expect(result.trueMonthlyCost).toBeGreaterThan(result.loan.monthlyPayment);
-    expect(result.monthlySurplus).toBeCloseTo(result.monthlyIncome - result.essentialExpenses - result.trueMonthlyCost! - scenario.profile.discretionarySpending, 2);
+    expect(result.trueMonthlyCost).toBeGreaterThan(result.loan.monthlyPayment!);
+    expect(result.monthlySurplus).toBeCloseTo(result.monthlyIncome! - result.essentialExpenses! - result.trueMonthlyCost! - scenario.profile.discretionarySpending, 2);
   });
 
   it('protects emergency savings unless explicitly enabled', () => {

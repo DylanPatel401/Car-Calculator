@@ -1,4 +1,4 @@
-import { PropsWithChildren, ReactNode, useState } from 'react';
+import { PropsWithChildren, ReactNode, useState, Ref } from 'react';
 import {
   Pressable,
   Platform,
@@ -38,18 +38,21 @@ export function ScreenHeader({ eyebrow, title, subtitle }: { eyebrow?: string; t
   );
 }
 
-export function Section({ title, caption, children, style }: PropsWithChildren<{ title: string; caption?: string; style?: ViewStyle }>) {
+export function Section({ title, caption, children, style, collapsible = false, initiallyOpen = false }: PropsWithChildren<{ title: string; caption?: string; style?: ViewStyle; collapsible?: boolean; initiallyOpen?: boolean }>) {
+  const [open, setOpen] = useState(initiallyOpen);
   const { colors } = useAppTheme();
   return (
     <View style={[styles.section, { borderColor: colors.border, backgroundColor: colors.surface }, style]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+      {collapsible ? <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ expanded: open }} onPress={() => setOpen(!open)} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={[styles.sectionTitle, { color: colors.text, flex: 1 }]}>{title}</Text><AppIcon name={open ? 'chevron.up' : 'chevron.down'} size={18} />
+      </Pressable> : <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>}
       {caption ? <Text style={[styles.caption, { color: colors.textMuted }]}>{caption}</Text> : null}
-      <View style={styles.sectionBody}>{children}</View>
+      {!collapsible || open ? <View style={styles.sectionBody}>{children}</View> : null}
     </View>
   );
 }
 
-export function Field({ label, hint, error, ...props }: TextInputProps & { label: string; hint?: string; error?: string }) {
+export function Field({ label, hint, error, ...props }: TextInputProps & { ref?: Ref<TextInput>; label: string; hint?: string; error?: string }) {
   const { colors } = useAppTheme();
   return (
     <View style={styles.fieldWrap}>
@@ -61,36 +64,31 @@ export function Field({ label, hint, error, ...props }: TextInputProps & { label
         placeholderTextColor={colors.textMuted}
         style={[styles.input, { color: colors.text, borderColor: error ? colors.danger : colors.border, backgroundColor: colors.background }, props.style]}
       />
-      {error || hint ? <Text style={[styles.hint, { color: error ? colors.danger : colors.textMuted }]}>{error ?? hint}</Text> : null}
+      {error || hint ? <Text accessibilityRole={error ? 'alert' : undefined} style={[styles.hint, { color: error ? colors.danger : colors.textMuted }]}>{error ?? hint}</Text> : null}
     </View>
   );
 }
 
-export function NumberField({ label, value, onChange, prefix, suffix, hint, allowDecimal = true }: {
-  label: string; value: number | null; onChange: (value: number | null) => void; prefix?: string; suffix?: string; hint?: string; allowDecimal?: boolean;
+export function NumberField({ label, value, onChange, prefix, suffix, hint, allowDecimal = true, min = 0, max, nullable = false, onValidityChange }: {
+  label: string; value: number | null; onChange: (value: number | null) => void; prefix?: string; suffix?: string; hint?: string; allowDecimal?: boolean; min?: number; max?: number; nullable?: boolean; onValidityChange?: (valid: boolean) => void;
 }) {
   const [focused, setFocused] = useState(false);
-  const display = focused && value === 0 ? '' : value === null ? '' : String(value);
-  return (
-    <Field
-      label={label}
-      value={display}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onChangeText={(text) => {
-        const clean = text.replace(/[^0-9.]/g, '');
-        if (!clean) onChange(null);
-        else {
-          const parsed = allowDecimal ? Number.parseFloat(clean) : Number.parseInt(clean, 10);
-          onChange(Number.isFinite(parsed) ? Math.max(0, parsed) : null);
-        }
-      }}
-      keyboardType={allowDecimal ? 'decimal-pad' : 'number-pad'}
-      placeholder={prefix ? `${prefix}0` : '0'}
-      hint={suffix ? `${hint ? `${hint} | ` : ''}${suffix}` : hint}
-      accessibilityLabel={label}
-    />
-  );
+  const [draft, setDraft] = useState(value === null ? '' : String(value));
+  const [error, setError] = useState<string>();
+  return <Field label={label} value={focused ? draft : value === null ? '' : String(value)} error={error}
+    onFocus={() => { if (!focused) setDraft(value === null ? '' : String(value)); setFocused(true); }} onBlur={() => { if (!error) setFocused(false); }}
+    onChangeText={text => {
+      setFocused(true); setDraft(text);
+      const clean = text.replace(/[$,\s]/g, '');
+      if (!clean && nullable) { setError(undefined); onValidityChange?.(true); onChange(null); return; }
+      const parsed = Number(clean);
+      if (!clean || !/^(?:\d+\.?\d*|\.\d+)$/.test(clean) || !Number.isFinite(parsed) || parsed < min || (max !== undefined && parsed > max) || (!allowDecimal && !Number.isInteger(parsed))) {
+        onValidityChange?.(false); setError(`Enter ${allowDecimal ? 'a number' : 'a whole number'} ${max !== undefined ? `from ${min} to ${max}` : `of at least ${min}`}. Results use your last valid value.`); return;
+      }
+      setError(undefined); onValidityChange?.(true); onChange(parsed);
+    }}
+    keyboardType={allowDecimal ? 'decimal-pad' : 'number-pad'} placeholder={prefix ? `${prefix}0` : '0'}
+    hint={suffix ? `${hint ? `${hint} / ` : ''}${suffix}` : hint} />;
 }
 
 export function Segmented<T extends string>({ label, hint, value, options, onChange }: {
@@ -129,7 +127,7 @@ export function ToggleRow({ label, caption, value, onChange }: { label: string; 
         <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
         {caption ? <Text style={[styles.hint, { color: colors.textMuted }]}>{caption}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: colors.primary }} />
+      <Switch accessibilityLabel={label} value={value} onValueChange={onChange} trackColor={{ true: colors.primary }} />
     </View>
   );
 }
@@ -163,7 +161,7 @@ export function Metric({ label, value, tone = 'neutral', detail }: { label: stri
   return (
     <View style={[styles.metric, { borderColor: colors.border, backgroundColor: colors.surface }]}>
       <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{label}</Text>
-      <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.metricValue, { color: toneColor }]}>{value}</Text>
+      <Text style={[styles.metricValue, { color: toneColor }]}>{value}</Text>
       {detail ? <Text style={[styles.hint, { color: colors.textMuted }]}>{detail}</Text> : null}
     </View>
   );
@@ -174,7 +172,7 @@ export function ShowMath({ children }: PropsWithChildren) {
   const { colors } = useAppTheme();
   return (
     <View>
-      <Pressable accessibilityRole="button" onPress={() => setOpen((value) => !value)} style={styles.mathButton}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((value) => !value)} style={styles.mathButton}>
         <Text style={[styles.mathLabel, { color: colors.primary }]}>{open ? 'Hide math' : 'Show math'}</Text>
         <AppIcon name={open ? 'chevron.up' : 'chevron.down'} size={14} color={colors.primary} />
       </Pressable>
@@ -195,26 +193,26 @@ export function responsiveColumns(width: number): ViewStyle {
 const styles = StyleSheet.create({
   header: { gap: 5, marginBottom: 20 },
   eyebrow: { fontSize: 12, lineHeight: 16, fontWeight: '700', textTransform: 'uppercase' },
-  title: { fontSize: 30, lineHeight: 36, fontWeight: '700' },
+  title: { fontSize: 34, lineHeight: 40, fontWeight: '700' },
   subtitle: { fontSize: 15, lineHeight: 22, maxWidth: 620 },
-  section: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, padding: 16, gap: 4 },
+  section: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 20, padding: 20, gap: 4 },
   sectionTitle: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
   sectionBody: { gap: 14, marginTop: 12 },
   caption: { fontSize: 13, lineHeight: 18 },
   fieldWrap: { gap: 6, flex: 1, minWidth: 130 },
   label: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
-  input: { borderWidth: 1, borderRadius: 7, minHeight: 46, paddingHorizontal: 12, fontSize: 16, fontVariant: ['tabular-nums'] },
+  input: { borderWidth: 1, borderRadius: 12, minHeight: 52, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, fontVariant: ['tabular-nums'] },
   hint: { fontSize: 12, lineHeight: 17 },
-  segmented: { flexDirection: 'row', borderRadius: 7, padding: 3, minHeight: 44 },
-  segment: { flex: 1, minHeight: 38, borderRadius: 5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  segmented: { flexDirection: 'row', flexWrap: 'wrap', gap: 2, borderRadius: 12, padding: 3, minHeight: 44 },
+  segment: { flex: 1, minWidth: 60, minHeight: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   segmentText: { fontSize: 13, lineHeight: 16, fontWeight: '600', textAlign: 'center' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: 12 },
   toggleCopy: { flex: 1, gap: 2 },
-  button: { minHeight: 48, borderRadius: 7, borderWidth: 1, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
+  button: { minHeight: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   buttonText: { fontSize: 15, lineHeight: 20, fontWeight: '700' },
-  metric: { minHeight: 106, flex: 1, minWidth: 145, borderWidth: StyleSheet.hairlineWidth, borderRadius: 8, padding: 14, gap: 5, justifyContent: 'center' },
+  metric: { minHeight: 106, flex: 1, minWidth: 145, borderWidth: StyleSheet.hairlineWidth, borderRadius: 20, padding: 14, gap: 5, justifyContent: 'center' },
   metricLabel: { fontSize: 12, lineHeight: 16, fontWeight: '600' },
-  metricValue: { fontSize: 25, lineHeight: 30, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  metricValue: { fontSize: 28, lineHeight: 34, fontWeight: '700', fontVariant: ['tabular-nums'] },
   mathButton: { flexDirection: 'row', minHeight: 44, gap: 6, alignItems: 'center' },
   mathLabel: { fontSize: 13, lineHeight: 18, fontWeight: '700' },
   mathBody: { padding: 12, borderRadius: 6, gap: 4 },

@@ -1,5 +1,6 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 import CompareScreen from '../../../app/(tabs)/compare';
+import ProfileScreen from '../../../app/(tabs)/profile';
 import { useScenarioStore } from '@/store/scenarioStore';
 import { createDefaultScenario } from '@/data/defaults';
 
@@ -36,4 +37,17 @@ it('duplicates, selects for comparison, and switches baseline', async () => {
   expect(state().workspace.baselineId).toBe(copy.id);
   await act(() => state().updateVehicle({ mpg: 0 }));
   expect(screen.getByText('Incomplete vehicle inputs')).toBeTruthy();
+});
+
+it('keeps all options until global reset is confirmed', async () => {
+  state().duplicateOption(state().workspace.activeOptionId);
+  const screen = await render(<ProfileScreen />);
+  await fireEvent.press(screen.getByText('Reset all local data'));
+  expect(state().workspace.options).toHaveLength(2);
+  await fireEvent.press(screen.getByText('Cancel'));
+  expect(state().workspace.options).toHaveLength(2);
+  await fireEvent.press(screen.getByText('Reset all local data'));
+  await fireEvent.press(screen.getByText('Reset everything'));
+  expect(state().workspace.options).toHaveLength(1);
+  expect(state().workspace.onboardingComplete).toBe(false);
 });

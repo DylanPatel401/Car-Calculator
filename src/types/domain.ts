@@ -131,25 +131,36 @@ export interface DebtProjection {
   payoffOrder: string[];
 }
 
+export interface CalculationIssue {
+  code: 'missing' | 'invalid' | 'cashflow' | 'reserve' | 'funding' | 'debt';
+  field: string;
+  message: string;
+}
+
+export type ScenarioStatus = 'incomplete' | 'shortfall' | 'reserveBelowTarget' | 'withinTarget';
+export type ScenarioLoan = { [K in keyof LoanResult]: K extends 'schedule' ? AmortizationRow[] : number | null };
+
 export interface ScenarioResult {
+  issues: CalculationIssue[];
+  status: ScenarioStatus;
   complete: boolean;
   vehicleName: string;
-  monthlyIncome: number;
-  essentialExpenses: number;
-  minimumDebtPayments: number;
-  maintenanceMonthly: number;
+  monthlyIncome: number | null;
+  essentialExpenses: number | null;
+  minimumDebtPayments: number | null;
+  maintenanceMonthly: number | null;
   maintenanceIsEstimate: boolean;
   fuelMonthly: number | null;
   trueMonthlyCost: number | null;
   monthlySurplus: number | null;
-  cashRemaining: number;
-  emergencyCashRemaining: number;
+  cashRemaining: number | null;
+  emergencyCashRemaining: number | null;
   emergencyRunwayMonths: number | null;
   transportationIncomePercent: number | null;
-  reserveGap: number;
-  downPaymentApplied: number;
-  downPaymentShortfall: number;
-  loan: LoanResult;
+  reserveGap: number | null;
+  downPaymentApplied: number | null;
+  downPaymentShortfall: number | null;
+  loan: ScenarioLoan;
   debtWithoutCar: DebtProjection;
   debtWithCar: DebtProjection;
   debtDelayMonths: number | null;
@@ -159,9 +170,9 @@ export interface ScenarioResult {
 export interface TimingResult {
   label: string;
   monthsWaiting: number;
-  downPayment: number;
+  downPayment: number | null;
   additionalSavings: number;
   waitingCost: number;
   result: ScenarioResult;
-  netDifferenceFromNow: number;
+  netDifferenceFromNow: number | null;
 }

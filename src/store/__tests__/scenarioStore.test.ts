@@ -1,11 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { flushWorkspace } from '@/store/persistence';
 import { STORAGE_KEY, useScenarioStore } from '@/store/scenarioStore';
 import { createDefaultScenario } from '@/data/defaults';
 import { scenarioForOption } from '@/data/workspace';
 
 jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 const state = () => useScenarioStore.getState();
-beforeEach(async () => { await state().reset(); });
+beforeEach(async () => { await state().reset(); await flushWorkspace(); });
 
 it('duplicates independently while sharing financial and driving inputs', () => {
   const id = state().workspace.activeOptionId;
@@ -32,7 +33,7 @@ it('deleting the last option preserves finances; reset clears them', async () =>
   expect(state().workspace.options).toHaveLength(1);
   expect(state().scenario.profile.carSavings).toBe(12345);
   await state().reset();
-  expect(state().scenario.profile.carSavings).toBe(5000);
+  expect(state().scenario.profile.carSavings).toBe(0);
   expect(state().scenario.onboardingComplete).toBe(false);
 });
 it('migrates the Zustand version-1 envelope and restores saved options', async () => {
@@ -43,6 +44,7 @@ it('migrates the Zustand version-1 envelope and restores saved options', async (
   expect(state().scenario.vehicle.make).toBe('Honda');
   state().duplicateOption(state().workspace.activeOptionId);
   state().renameOption(state().workspace.activeOptionId, 'Second choice');
+  await flushWorkspace();
   await useScenarioStore.persist.rehydrate();
   expect(state().workspace.options).toHaveLength(2);
   expect(state().workspace.options[1]!.name).toBe('Second choice');

@@ -1,0 +1,41 @@
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import OnboardingScreen from '../../../app/onboarding';
+import { clearSetup, emptySetup, saveSetup } from '@/data/setup';
+import { useScenarioStore } from '@/store/scenarioStore';
+import { flushWorkspace } from '@/store/persistence';
+jest.mock('@react-native-async-storage/async-storage', () => jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'));
+beforeEach(async () => { await clearSetup(); });
+it('validates each step and completes four stages with explicit personal inputs', async () => {
+  const screen = await render(<OnboardingScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Paycheck amount')).toBeTruthy());
+  expect(screen.getByLabelText('Paycheck amount').props.value).toBe('');
+  await fireEvent.press(screen.getByText('Continue'));
+  await waitFor(() => expect(screen.getByText('Enter take-home pay above zero.')).toBeTruthy());
+  await fireEvent.changeText(screen.getByLabelText('Paycheck amount'), '2500');
+  await fireEvent.press(screen.getByText('Continue'));
+  await waitFor(() => expect(screen.getByLabelText('Emergency savings')).toBeTruthy());
+  for (const label of ['Emergency savings', 'Car savings', 'Emergency reserve target']) await fireEvent.changeText(screen.getByLabelText(label), '0');
+  await fireEvent.changeText(screen.getByLabelText('Required monthly expenses'), '1800');
+  await fireEvent.press(screen.getByText('Continue'));
+  await waitFor(() => expect(screen.getByLabelText('Make')).toBeTruthy());
+  for (const [label, value] of [['Make', 'Honda'], ['Model', 'Civic'], ['Purchase price', '22000'], ['Down payment', '0'], ['APR (%)', '6.5'], ['Sales tax (%)', '7']]) await fireEvent.changeText(screen.getByLabelText(label!), value!);
+  await fireEvent.press(screen.getByText('Continue'));
+  await waitFor(() => expect(screen.getByText('Your first clear picture')).toBeTruthy());
+  await fireEvent.press(screen.getByText('See my plan'));
+  await flushWorkspace();
+  await waitFor(() => expect(useScenarioStore.getState().workspace.onboardingComplete).toBe(true));
+  expect(useScenarioStore.getState().scenario.profile.emergencySavings).toBe(0);
+});
+it('resumes saved draft values at their previous stage', async () => {
+  await saveSetup({ ...emptySetup(), paycheck: '3123', carSavings: '845' }, 1);
+  const screen = await render(<OnboardingScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Car savings').props.value).toBe('845'));
+  await fireEvent.press(screen.getByText('Back'));
+  expect(screen.getByLabelText('Paycheck amount').props.value).toBe('3123');
+});
+it('handles a draft read failure without blocking setup', async () => {
+  jest.mocked(AsyncStorage.getItem).mockRejectedValueOnce(new Error('unavailable'));
+  const screen = await render(<OnboardingScreen />);
+  await waitFor(() => expect(screen.getByLabelText('Paycheck amount').props.value).toBe(''));
+});

@@ -1,13 +1,13 @@
 import { useColorScheme } from 'react-native';
 
 export const lightColors = {
-  background: '#F4F6F5',
+  background: '#F6F5F0',
   surface: '#FFFFFF',
-  surfaceMuted: '#E9EEEB',
+  surfaceMuted: '#EEEFE8',
   text: '#15201B',
   textMuted: '#5F6D66',
-  border: '#D5DDD8',
-  primary: '#087A53',
+  border: '#E0E3DA',
+  primary: '#146C50',
   primarySoft: '#DDF3E9',
   warning: '#9A5A00',
   warningSoft: '#FFF1D6',
@@ -17,8 +17,8 @@ export const lightColors = {
 } as const;
 
 export const darkColors = {
-  background: '#101512',
-  surface: '#19211D',
+  background: '#111A17',
+  surface: '#1B2722',
   surfaceMuted: '#25302A',
   text: '#F1F5F2',
   textMuted: '#AEBBB4',
