@@ -1,0 +1,134 @@
+{
+  "captureType": "Actual app web preview; native iOS capture pending",
+  "outputs": [
+    {
+      "device": "iphone",
+      "file": "iphone/01-full-picture.png",
+      "id": "01",
+      "slug": "full-picture",
+      "title": [
+        "Your next car.",
+        "The full picture."
+      ],
+      "sub": [
+        "See the monthly cost, cash left over,",
+        "and the savings you keep."
+      ]
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/02-ownership-cost.png",
+      "id": "02",
+      "slug": "ownership-cost",
+      "title": [
+        "More than",
+        "monthly payments."
+      ],
+      "sub": [
+        "Fuel. Insurance. Maintenance.",
+        "Understand where every dollar goes."
+      ]
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/03-safety-cushion.png",
+      "id": "03",
+      "slug": "safety-cushion",
+      "title": [
+        "Keep your safety",
+        "cushion in view."
+      ],
+      "sub": [
+        "Set your reserve target.",
+        "See what remains after the purchase."
+      ],
+      "dark": true
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/04-compare-options.png",
+      "id": "04",
+      "slug": "compare-options",
+      "title": [
+        "Compare the cars.",
+        "See the trade-offs."
+      ],
+      "sub": [
+        "Put your options side by side.",
+        "The decision stays yours."
+      ]
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/05-what-if.png",
+      "id": "05",
+      "slug": "what-if",
+      "title": [
+        "A little “what if”.",
+        "A lot more clarity."
+      ],
+      "sub": [
+        "Try a new price, rate, or loan term.",
+        "Keep your original option intact."
+      ]
+    },
+    {
+      "device": "iphone",
+      "file": "iphone/06-purchase-timing.png",
+      "id": "06",
+      "slug": "purchase-timing",
+      "title": [
+        "Buy now.",
+        "Or plan for later."
+      ],
+      "sub": [
+        "Explore what waiting changes—",
+        "from your payment to your cash."
+      ],
+      "dark": true
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/01-full-picture.png",
+      "id": "01",
+      "slug": "full-picture",
+      "title": [
+        "Your next car.",
+        "The full picture."
+      ],
+      "sub": [
+        "See the monthly cost, cash left over,",
+        "and the savings you keep."
+      ]
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/04-compare-options.png",
+      "id": "04",
+      "slug": "compare-options",
+      "title": [
+        "Compare the cars.",
+        "See the trade-offs."
+      ],
+      "sub": [
+        "Put your options side by side.",
+        "The decision stays yours."
+      ]
+    },
+    {
+      "device": "ipad",
+      "file": "ipad/06-purchase-timing.png",
+      "id": "06",
+      "slug": "purchase-timing",
+      "title": [
+        "Buy now.",
+        "Or plan for later."
+      ],
+      "sub": [
+        "Explore what waiting changes—",
+        "from your payment to your cash."
+      ],
+      "dark": true
+    }
+  ]
+}
