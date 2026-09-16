@@ -82,7 +82,7 @@ export default function CompareScreen() {
               <View style={{ flex: 1 }}><Text style={[styles.name, { color: colors.text }]}>{option.name}</Text>
                 <Text style={{ color: colors.textMuted }}>{[option.vehicle.year, option.vehicle.make, option.vehicle.model].filter(Boolean).join(' ')}</Text></View>
             </View>
-            <Text style={{ color: colors.text }}>{result.complete ? `${formatCurrency(result.trueMonthlyCost)} / month | ${formatCurrency(result.monthlySurplus)} surplus` : 'Incomplete inputs'}</Text>
+            <Text style={{ color: colors.text }}>{result.complete ? `${formatCurrency(result.trueMonthlyCost)} / month | ${formatCurrency(result.monthlySurplus)} surplus` : result.issues.some(issue => issue.field.startsWith('vehicle.')) ? 'Incomplete vehicle inputs' : 'Incomplete financial inputs'}</Text>
             {result.warnings.map((warning) => <Text key={warning} style={{ color: colors.warning }}>{warning}</Text>)}
             <View style={styles.actions}>
               <Button label="Edit" variant="secondary" onPress={() => edit(option.id)} />

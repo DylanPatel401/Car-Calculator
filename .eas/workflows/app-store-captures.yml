@@ -1,0 +1,30 @@
+name: App Store native screenshots
+jobs:
+  iphone:
+    type: maestro
+    environment: preview
+    params:
+      build_id: 06237052-7536-4c2a-92c8-b0220aa127d2
+      flow_path: .maestro/app-store.yml
+      device_identifier: iPhone 17 Pro Max
+      record_screen: false
+    hooks:
+      before_maestro_tests:
+        - name: Set screenshot appearance
+          run: |
+            xcrun simctl ui booted appearance light
+            xcrun simctl status_bar booted override --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100
+  ipad:
+    type: maestro
+    environment: preview
+    params:
+      build_id: 06237052-7536-4c2a-92c8-b0220aa127d2
+      flow_path: .maestro/app-store.yml
+      device_identifier: iPad Pro 13-inch (M5)
+      record_screen: false
+    hooks:
+      before_maestro_tests:
+        - name: Set screenshot appearance
+          run: |
+            xcrun simctl ui booted appearance light
+            xcrun simctl status_bar booted override --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 --batteryState charged --batteryLevel 100

@@ -1,0 +1,54 @@
+appId: com.dylanpatel.carcalculator
+name: Capture an isolated sample plan
+---
+- launchApp:
+    clearState: true
+- tapOn: Explore a demo
+- waitForAnimationToEnd
+- takeScreenshot: 01-monthly-cost
+- scrollUntilVisible:
+    element: Vehicle
+    direction: DOWN
+- tapOn: Vehicle
+- scrollUntilVisible:
+    element: Your safety cushion
+    direction: DOWN
+- takeScreenshot: 03-reserve
+- scrollUntilVisible:
+    element: Every dollar, accounted for
+    direction: DOWN
+- swipe:
+    start: 50%, 75%
+    end: 50%, 40%
+    duration: 600
+- takeScreenshot: 02-ownership
+- tapOn: Timing.*
+- waitForAnimationToEnd
+- takeScreenshot: 06-timing
+- tapOn: Calculator.*
+- scrollUntilVisible:
+    element: What if I change the terms?
+    direction: UP
+- tapOn: What if I change the terms?
+- takeScreenshot: 05-what-if
+- scrollUntilVisible:
+    element: Vehicle price
+    direction: DOWN
+- tapOn: Vehicle price
+- eraseText
+- inputText: '26000'
+- hideKeyboard
+- scrollUntilVisible:
+    element: New option name
+    direction: DOWN
+- tapOn: New option name
+- eraseText
+- inputText: Lower purchase price
+- hideKeyboard
+- scrollUntilVisible:
+    element: Save as new option
+    direction: DOWN
+- tapOn: Save as new option
+- tapOn: Compare.*
+- waitForAnimationToEnd
+- takeScreenshot: 04-compare
